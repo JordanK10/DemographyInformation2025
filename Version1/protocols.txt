@@ -1,0 +1,43 @@
+Protocol for Porting R Functions to Python
+
+1. COPY PHASE
+   - Identify next function from R source file
+   - Create direct Python translation of R function
+   - Maintain same variable names and logic structure
+   - Comment any R-specific operations that need Python equivalents
+
+2. OPTIMIZE PHASE
+   - Create new function with "_vectorized" or "_optimized" suffix
+   - Implement using Python/NumPy/Pandas best practices
+   - Focus on:
+     * Vectorized operations over loops
+     * Efficient memory usage
+     * Python-specific data structures
+     * Maintaining numerical stability
+
+3. TEST PHASE
+   - Create test cases with dummy data
+   - Test both implementations:
+     * Simple cases with known outputs
+     * Edge cases (empty, single value, etc.)
+     * Random data
+   - Verify identical results within numerical precision
+   - Document any differences or special cases
+
+4. CLEANUP PHASE
+   - Once tests pass, remove the direct translation
+   - Keep only the optimized version
+   - Move tests to testfuncs.py if needed
+   - Update any dependent functions to use new implementation
+
+5. DOCUMENTATION
+   - Add docstring to final implementation
+   - Without editing previous test results, add the new test results to the end of testresults.txt
+   - Note any key differences from R version in testresults.txt
+   - Document assumptions and limitations in testresults.txt
+
+6. PROCEED
+   - Move to next function in R source file
+   - Repeat process
+
+Note: Maintain consistent naming and style throughout the Python codebase.

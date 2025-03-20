@@ -1,0 +1,57 @@
+Data Specifications and Constraints for Mock Data
+---------------------------------------------------
+
+1. PersonLopNr:
+   - Total data points: 30,000 records.
+   - Maximum number of unique individuals: 15,000.
+   - Each individual may appear multiple times (over several consecutive years).
+
+2. Income:
+   - Income values are capped at 25,000 (currency unspecified).
+   - Income is positively correlated with age; later records for an individual should show higher income.
+   - Each profession is assigned a unique, non-overlapping income range (no profession’s income range spans the full 0–25,000 domain).
+   - Similarly, each university (uni_id) is associated with its own income range—some universities produce wealthier individuals on average, while others yield lower incomes.
+
+3. Profession:
+   - Total unique professions: 50.
+   - Profession codes must be numeric and vary between 3310 and 3360.
+   - Each profession is linked to a specific income range (see Income).
+
+4. Gender:
+   - Only two possible values: "m" for male and "f" for female.
+   - Gender is randomly assigned for each individual.
+
+5. Education:
+   - Education values should be sampled from the set of values present in the original sample file.
+   - Only the values that exist in the sample file (e.g., 337, 441, etc.) should be used.
+
+6. City:
+   - City names must be selected from the 25 largest cities in Sweden.
+   - Only these 25 cities are to be used when assigning city values.
+
+7. Uni_id:
+   - Total unique universities: 30.
+   - Each uni_id is associated with a unique income range, reflecting differences in wealth outcomes.
+   - The income range for each university does not cover the full 0–25,000 spectrum.
+
+8. Ethnicity:
+   - Ethnicity is sampled from the existing values in the sample data.
+   - An individual’s ethnicity must remain constant across all records.
+
+9. Parental Income:
+   - Represented as a percentile (parental_income_percentile7) ranging from 0 to 100.
+   - This value is assigned per individual and remains constant over time.
+
+10. Age:
+    - The starting age for each individual is uniformly sampled between 20 and 65.
+    - For repeated records of the same individual, age increments by 1 for each consecutive record.
+    - An individual’s age must always remain within the 20–65 range.
+
+11. Year:
+    - Year values range from 1980 to 2025.
+    - For consecutive records of the same individual, the year increments by 1 along with the age.
+    - The first record for an individual can start at any year between 1980 and 2025, with subsequent records following sequentially.
+
+12. Cohort:
+    - Cohort represents the individual’s birth year, calculated as: cohort = year - age.
+    - The cohort must remain consistent for each individual across all records.

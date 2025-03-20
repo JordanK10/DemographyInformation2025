@@ -1,0 +1,365 @@
+# Radial Tree Visualization - Matplotlib Prototype Implementation
+
+## Basic Prototype Implementation
+
+```python
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.patches import Wedge, ConnectionPatch
+import seaborn as sns
+import matplotlib.colors as mcolors
+from pmi import mutual_information, conditional_mutual_information
+
+def generate_radial_info_tree(data, target_var, *conditioning_vars, n_bins=5, 
+                              min_info_threshold=0.01, fig_size=(12, 12)):
+    """
+    Generate a radial tree visualization for conditional mutual information.
+    
+    Args:
+        data (pd.DataFrame): Input dataset
+        target_var (str): Target variable to compute information about
+        *conditioning_vars: Variables to condition on (in order from center outward)
+        n_bins (int): Number of bins for each variable
+        min_info_threshold (float): Minimum information value to display
+        fig_size (tuple): Figure size
+    """
+    # Create figure with polar projection
+    fig, ax = plt.subplots(figsize=fig_size, subplot_kw={'projection': 'polar'})
+    
+    # Set up color palettes for each level
+    # Different color for each variable
+    var_colors = {var: color for var, color in zip(
+        conditioning_vars, 
+        sns.color_palette("husl", len(conditioning_vars))
+    )}
+    
+    # Calculate base entropy of target variable
+    # (Not directly plotted but useful for reference)
+    base_entropy = entropy(data, target_var) 
+    
+    # Create bin mappings for all conditioning variables
+    bin_mappings = {}
+    for var in conditioning_vars:
+        bin_mapping, _ = create_variable_bins(data, var, n_bins=n_bins)
+        bin_mappings[var] = bin_mapping
+    
+    # Apply binning to create a working dataset
+    binned_data = apply_bin_mappings(data, bin_mappings)
+    
+    # Set up radial tree data structure
+    tree_data = {}
+    
+    # LEVEL 1: First conditioning variable
+    first_var = conditioning_vars[0]
+    unique_bins = sorted(set(bin_mappings[first_var].values()))
+    n_first_bins = len(unique_bins)
+    
+    # Calculate angular width for first level bins
+    # Full circle divided by number of bins
+    angular_width = 2 * np.pi / n_first_bins
+    
+    # Process first level
+    max_info_value = 0  # To track maximum information for scaling
+    
+    for i, bin_val in enumerate(unique_bins):
+        # Filter data for this bin
+        bin_data = data[data[first_var].map(bin_mappings[first_var]) == bin_val]
+        bin_size = len(bin_data)
+        weight = bin_size / len(data)  # Proportion of samples in this bin
+        
+        # Calculate mutual information for this bin
+        info_value = mutual_information(data, target_var, first_var)
+        
+        # Skip if below threshold
+        if info_value < min_info_threshold:
+            continue
+        
+        # Update max value
+        max_info_value = max(max_info_value, info_value)
+        
+        # Calculate position
+        theta = i * angular_width  # Start angle
+        width = angular_width * 0.9  # Leave small gap between segments
+        
+        # Store information for this branch
+        tree_data[(bin_val,)] = {
+            'theta': theta,
+            'width': width * weight,  # Scale width by proportion
+            'info': info_value,
+            'samples': bin_size,
+            'level': 1,
+            'var': first_var
+        }
+    
+    # LEVEL 2+: Process deeper levels
+    for level in range(2, len(conditioning_vars) + 1):
+        current_var = conditioning_vars[level-1]
+        prior_var = conditioning_vars[level-2]
+        
+        # Get branches from previous level
+        prev_branches = {k: v for k, v in tree_data.items() if v['level'] == level-1}
+        
+        for branch_path, branch_info in prev_branches.items():
+            # Get unique bins for current variable
+            current_bins = sorted(set(bin_mappings[current_var].values()))
+            
+            # Filter data for this branch
+            branch_filter = data.copy()
+            for l, bin_val in enumerate(branch_path):
+                var_l = conditioning_vars[l]
+                branch_filter = branch_filter[
+                    branch_filter[var_l].map(bin_mappings[var_l]) == bin_val
+                ]
+            
+            # Skip if too few samples
+            if len(branch_filter) < 10:
+                continue
+                
+            # Calculate child branches
+            for bin_val in current_bins:
+                # Filter for this bin
+                bin_data = branch_filter[
+                    branch_filter[current_var].map(bin_mappings[current_var]) == bin_val
+                ]
+                bin_size = len(bin_data)
+                
+                # Skip if too few samples
+                if bin_size < 5:
+                    continue
+                    
+                # Calculate weight based on parent
+                weight = bin_size / len(branch_filter)
+                
+                # Calculate conditional mutual information
+                # Previous variables as base conditions
+                base_conditions = [conditioning_vars[i] for i in range(level-1)]
+                info_value = conditional_mutual_information(
+                    branch_filter, 
+                    target_var,
+                    base_conditions=base_conditions,
+                    conditioned_conditions=[current_var]
+                )
+                
+                # Skip if below threshold
+                if info_value < min_info_threshold:
+                    continue
+                    
+                # Update max value
+                max_info_value = max(max_info_value, info_value)
+                
+                # Calculate position
+                # Child's angular position is within parent's span
+                parent_theta = branch_info['theta']
+                parent_width = branch_info['width']
+                
+                # Determine where in parent's span this child goes
+                # Proportional to bin's index
+                bin_idx = current_bins.index(bin_val)
+                bin_count = len(current_bins)
+                pos_within_parent = bin_idx / bin_count
+                
+                theta = parent_theta + parent_width * pos_within_parent
+                width = parent_width * weight * 0.9  # Slightly narrower
+                
+                # Create new branch path
+                new_path = branch_path + (bin_val,)
+                
+                # Store information
+                tree_data[new_path] = {
+                    'theta': theta,
+                    'width': width,
+                    'info': info_value,
+                    'samples': bin_size,
+                    'level': level,
+                    'var': current_var,
+                    'parent': branch_path
+                }
+    
+    # Normalize information values for radial distance
+    # Scale between 0.2 and 0.9 of the radius
+    max_radius = 0.9
+    min_radius = 0.2
+    norm = mcolors.Normalize(vmin=0, vmax=max_info_value)
+    
+    # Plot rings for each level
+    for level in range(1, len(conditioning_vars) + 1):
+        # Get branches for this level
+        level_branches = {k: v for k, v in tree_data.items() if v['level'] == level}
+        
+        # Base radius for this level
+        base_radius = level / (len(conditioning_vars) + 1)
+        
+        # Plot each branch
+        for branch_path, branch_info in level_branches.items():
+            # Get color for this variable
+            var_color = var_colors[branch_info['var']]
+            
+            # Calculate radius based on information
+            # Higher information = longer bar
+            info_radius = min_radius + norm(branch_info['info']) * (max_radius - min_radius)
+            radius = base_radius + info_radius / (len(conditioning_vars) + 1)
+            
+            # Inner radius is just the base level radius
+            inner_radius = base_radius
+            
+            # Calculate angles
+            theta = branch_info['theta']
+            width = branch_info['width']
+            
+            # Create wedge
+            wedge = Wedge(
+                (0, 0),                          # center
+                radius,                          # outer radius
+                np.degrees(theta),               # start angle (degrees)
+                np.degrees(theta + width),       # end angle (degrees)
+                width=radius - inner_radius,     # width of wedge
+                color=var_color,
+                alpha=0.7,
+                ec='white',
+                lw=0.5
+            )
+            
+            # Add wedge to plot
+            ax.add_patch(wedge)
+            
+            # Add text label for significant branches
+            if branch_info['info'] > 0.05:
+                # Calculate text position
+                text_radius = inner_radius + (radius - inner_radius) / 2
+                text_angle = theta + width / 2
+                
+                # Add text
+                # Use small font size for deeper levels
+                fontsize = max(6, 10 - level)
+                
+                # Format info value
+                info_text = f"{branch_info['info']:.2f}"
+                
+                ax.text(
+                    text_angle, text_radius,
+                    info_text,
+                    ha='center', va='center',
+                    rotation=np.degrees(text_angle) + 90,  # Align with radius
+                    rotation_mode='anchor',
+                    color='white',
+                    fontsize=fontsize,
+                    fontweight='bold'
+                )
+            
+            # Connect to parent if not level 1
+            if level > 1:
+                parent_info = tree_data[branch_info['parent']]
+                parent_theta = parent_info['theta'] + parent_info['width'] / 2
+                parent_radius = (level - 1) / (len(conditioning_vars) + 1)
+                parent_radius += min_radius + norm(parent_info['info']) * (max_radius - min_radius)
+                parent_radius /= (len(conditioning_vars) + 1)
+                
+                # Create connecting line
+                con = ConnectionPatch(
+                    # Parent point (in data coordinates)
+                    (parent_theta, parent_radius),
+                    # Child point
+                    (theta + width/2, radius),
+                    'polar', 'polar',
+                    # Make it thin and light
+                    lw=0.5,
+                    alpha=0.3,
+                    color='gray'
+                )
+                ax.add_artist(con)
+    
+    # Add guide circles for each level
+    for level in range(1, len(conditioning_vars) + 1):
+        level_radius = level / (len(conditioning_vars) + 1)
+        ax.add_patch(plt.Circle((0, 0), level_radius, fill=False, 
+                                color='gray', ls='--', lw=0.5, alpha=0.5))
+    
+    # Customize plot
+    ax.set_axis_off()  # Hide normal polar axes
+    
+    # Add title
+    plt.title(f"Radial Information Tree for {target_var}", fontsize=14, pad=20)
+    
+    # Add variable labels to each ring
+    for level, var in enumerate(conditioning_vars, 1):
+        level_radius = level / (len(conditioning_vars) + 1)
+        ax.text(0, level_radius, var, ha='center', va='center',
+                bbox=dict(facecolor='white', alpha=0.7, boxstyle='round'),
+                fontsize=10, fontweight='bold')
+    
+    # Add legend
+    legend_elements = [
+        plt.Line2D([0], [0], color=color, lw=4, label=var)
+        for var, color in var_colors.items()
+    ]
+    ax.legend(handles=legend_elements, loc='upper right',
+             bbox_to_anchor=(1.2, 1.0), fontsize=10)
+    
+    # Set title and adjust layout
+    plt.tight_layout()
+    return fig, ax
+```
+
+## Visualization Notes
+
+1. **Key Python Libraries:**
+   - Matplotlib with polar projection
+   - Patches like Wedge for the segments
+   - ConnectionPatch for connecting parent-child segments
+
+2. **First Layer Implementation:**
+   - Calculate mutual information I(Y;A=a) for the first conditioning variable
+   - Divide the full circle into segments based on first variable's bins
+   - Width of segment proportional to bin sample size
+   - Length of segment (radius) proportional to information value
+
+3. **Second Layer and Beyond:**
+   - Each segment branches out to multiple segments in the next ring
+   - Child segments are positioned within the angular width of their parent
+   - Maintains radial alignment to visually track paths
+   - Connect each child to its parent with thin lines
+
+4. **Visual Enhancements:**
+   - Color-coding by variable
+   - Information values displayed on segments
+   - Concentric guide circles for each level
+   - Transparency to reduce visual clutter
+
+5. **Optimization Notes:**
+   - Threshold filtering to remove insignificant branches
+   - Sample size filtering to ensure statistical validity
+   - Dynamic spacing to balance readability vs. information density
+
+6. **Scaling Considerations:**
+   - Set minimum angular width to ensure readability
+   - Scale text size based on level depth
+   - Use transparent connections to reduce visual complexity
+
+## Usage Example
+
+```python
+# Sample usage
+if __name__ == "__main__":
+    # Load sample data
+    data = pd.read_csv("mock_data/small_data.csv")
+    
+    # Define variables
+    target_var = 'income'
+    conditioning_vars = ['education', 'gender', 'city', 'age']
+    
+    # Generate visualization
+    fig, ax = generate_radial_info_tree(
+        data, 
+        target_var, 
+        *conditioning_vars, 
+        n_bins=5, 
+        min_info_threshold=0.01,
+        fig_size=(14, 14)
+    )
+    
+    # Save figure
+    plt.savefig('results/radial_info_tree.pdf', bbox_inches='tight', dpi=300)
+    plt.savefig('results/radial_info_tree.png', bbox_inches='tight', dpi=300)
+    plt.close()
+``` 

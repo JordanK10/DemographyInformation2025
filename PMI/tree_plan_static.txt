@@ -1,0 +1,121 @@
+# Static Tree-Structured Visualization for Conditional Mutual Information
+
+## Concept Overview
+This plan outlines the implementation of a static tree-structured visualization for displaying conditional mutual information (CMI) across multiple variables. The visualization resembles a menorah or branching tree, where each branch represents conditioning on specific variable values, and the "leaves" show the mutual information decomposition for the remaining variables.
+
+## Visual Structure
+
+1. **ROOT LEVEL (TRUNK)**
+   - Start with a single horizontal row of bars representing the bins of the first conditioning variable
+   - Bars are sorted by information content (highest to lowest) or by bin value
+   - Each bar width represents proportion of samples in that bin
+   - Bar height represents mutual information I(Y;A=a)
+   - Clear labels showing the bin value and information quantity
+
+2. **BRANCH LEVEL (LEVEL 2)**
+   - From each first-level bar, branch out horizontally to the right
+   - Second-level bars represent bins of the second conditioning variable
+   - Branches are thinner than the trunk but maintain proportional width based on sample count
+   - Heights represent conditional mutual information I(Y;B=b|A=a)
+   - Horizontal guide line connects the tops of bars at this level for comparison
+   - Branches are spaced with adequate vertical separation
+
+3. **ADDITIONAL BRANCHING (LEVEL 3+)**
+   - Continue the pattern for each additional conditioning variable
+   - Progressively thinner branches with appropriate spacing
+   - Maintain horizontal alignment within each level
+   - Clear visual indicators of the path from root to current branch
+   - Horizontal guides for comparing information quantities
+
+4. **LEAF LEVEL (TERMINAL NODES)**
+   - At each terminal node (after all conditioning variables), display the traditional stacked bar graph
+   - Shows mutual information decomposition for remaining variables 
+   - Uses the standard I(Y;X₁), I(Y;X₂|X₁), I(Y;X₃|X₁,X₂), etc. pattern
+   - Visually distinguish these from the branch structure
+
+## Implementation Components
+
+1. **DATA PROCESSING**
+   - Function to create bin combinations across multiple conditioning variables
+   - Calculation of mutual information for each bin combination
+   - Recursive structure to organize the data in a tree data structure
+   - Handling empty or low-sample bins (pruning)
+
+2. **LAYOUT ALGORITHM**
+   - Calculate proper vertical and horizontal spacing for all branches
+   - Determine branch widths based on sample proportions
+   - Implement algorithm to prevent overlap between branches
+   - Allocate space efficiently based on total figure size
+
+3. **VISUALIZATION RENDERING**
+   - Draw bars with appropriate dimensions and styles
+   - Connect branches with branches/lines
+   - Add horizontal guide lines
+   - Implement color scheme (consistent across variables)
+
+4. **LABELING & ANNOTATIONS**
+   - Clear labeling for each branch showing the conditioning path
+   - Information quantities displayed on or near each bar
+   - Legend explaining the visualization structure
+   - Careful placement of text to avoid overlap
+
+5. **SCALE MANAGEMENT**
+   - Handling large trees with many branches
+   - Options for pruning insignificant branches
+   - Multiple figures for very large trees
+   - Scale bars to indicate relative information quantities
+
+## Technical Challenges
+
+1. **EXPONENTIAL GROWTH**
+   - Number of branches grows exponentially with conditioning variables
+   - Implement filtering/thresholding to focus on significant branches
+   - Create separate figures for different subtrees when necessary
+
+2. **LAYOUT COMPLEXITIES**
+   - Avoiding overlaps in complex trees
+   - Maintaining readable proportions at deep levels
+   - Balancing information density with clarity
+
+3. **INFORMATION DISPLAY**
+   - Ensuring information quantities are comparable across branches
+   - Handling very small or very large information values
+   - Maintaining visual consistency across the tree
+
+4. **FIGURE SIZE MANAGEMENT**
+   - Determining appropriate figure dimensions
+   - Balancing detail with overall visibility
+   - Ensuring text is readable at publication size
+
+## Implementation Phases
+
+1. **PROTOTYPE PHASE**
+   - Implement for 2 conditioning variables only
+   - Simple layout with fixed spacing
+   - Basic coloring and labeling
+   - Test with small datasets
+
+2. **BASIC IMPLEMENTATION**
+   - Support for arbitrary number of conditioning variables
+   - Improved layout algorithm
+   - Enhanced visual styling
+   - Better labeling
+
+3. **ADVANCED FEATURES**
+   - Multiple figure generation for complex trees
+   - Automatic pruning of insignificant branches
+   - High-resolution export capabilities
+   - Customization of visual elements
+
+4. **OPTIMIZATION**
+   - Performance improvements for generating large trees
+   - Vectorized rendering for publication quality
+   - Multiple output formats (PDF, PNG, SVG)
+   - Documentation and usage examples
+
+## Testing Plan
+
+1. Test with synthetic datasets where information relationships are known
+2. Validate with small real-world datasets
+3. Test with larger datasets to evaluate visual clarity with complex trees
+4. Print tests to ensure readability in physical format 

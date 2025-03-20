@@ -1,0 +1,189 @@
+=== discretize_variable Tests (2024-03-19) ===
+
+Test case 1 - Numeric series:
+- Original bins: 10
+- Vectorized bins: 10
+- Categories match: True
+
+Test case 2 - Data with duplicates:
+- Original bins: 5
+- Vectorized bins: 5
+- Distributions identical: True
+
+Test case 3 - Non-numeric data:
+- Original returns same: True
+- Vectorized returns same: True
+
+Key differences from R version:
+- Uses numpy.nanquantile instead of R's quantile
+- Handles duplicates differently (R drops, Python maintains unique edges)
+- Returns pandas categorical type instead of R's factor
+
+Assumptions and limitations:
+- Requires numpy-compatible numeric data for binning
+- Maintains original data if non-numeric
+- Edge case handling for n_unique <= num_bins
+
+=== multilevel_info_decomposition Tests (2024-03-19) ===
+
+Test case 1 - Basic functionality:
+- Original implementation shape: (2, 5)
+- Vectorized implementation shape: (2, 5)
+- Results match: True
+
+Test case 2 - Edge case (single feature):
+- Single feature results match: True
+- Shape verification: (1, 5) for both implementations
+
+Test case 3 - All features with discretization:
+- All features results match: True
+- Discretization consistent between implementations
+
+Test case 4 - Ordering consistency:
+- Orderings match: True
+- Same permutations generated for n_features <= 6
+- Same random seed behavior for n_features > 6
+
+Key differences from R version:
+- Uses pandas DataFrame operations instead of R's data.frame
+- Implements parallel processing differently
+- Returns plot as figure object instead of R's ggplot
+- Uses seaborn for visualization instead of ggplot2
+
+Assumptions and limitations:
+- Maximum of 6 features for full permutation
+- Uses fixed random seed (123) for feature ordering
+- Requires pandas-compatible input data
+- Memory usage scales with number of features factorial
+
+=== analyze_feature_combinations Tests (2024-03-19) ===
+
+Test case 1 - Basic functionality (2 features):
+- Original shape: (3, 3)
+- Vectorized shape: (3, 3)
+- Results match: True
+
+Test case 2 - All combinations up to 3 features:
+- Number of combinations match: True
+- Results match: True
+- Expected combinations generated: 16
+
+Test case 3 - Feature ordering consistency:
+- Feature combinations match: True
+- Consistent ordering between implementations
+
+Test case 4 - Mixed data types handling:
+- Mixed types results match: True
+- Proper handling of categorical and continuous features
+
+Key differences from R version:
+- Uses itertools.combinations instead of R's combn
+- Pre-processes all features at once for efficiency
+- Returns sorted DataFrame instead of R's ordered data.frame
+
+Assumptions and limitations:
+- Maximum features parameter to control computational complexity
+- Pre-computes all combinations before processing
+- Memory usage scales with number of feature combinations
+- Requires consistent data types across implementations
+
+=== discretize_variable Tests (2024-03-19) ===
+
+Test case 1 - Numeric series:
+- Original bins: 10
+- Vectorized bins: 10
+- Categories match: True
+
+Test case 2 - Data with duplicates:
+- Original bins: 5
+- Vectorized bins: 5
+- Distributions identical: True
+
+Test case 3 - Non-numeric data:
+- Original returns same: True
+- Vectorized returns same: True
+
+=== plot_feature_importance Tests (2024-03-19) ===
+
+Test case 1 - Basic plotting functionality:
+- Plot created: True
+- Contains expected visual elements
+
+Test case 2 - Plot elements:
+- Has title: True
+- Has x-label: True
+- Has y-label: True
+- Proper axis formatting
+
+Test case 3 - Custom figure size:
+- Custom size applied: True
+- Maintains aspect ratio
+- Proper scaling of elements
+
+=== plot_feature_combinations Tests (2024-03-19) ===
+
+Test case 1 - Basic plotting functionality:
+- Plot created: True
+- Proper combination labels
+
+Test case 2 - Plot elements:
+- Has title: True
+- Has x-label: True
+- Has y-label: True
+- Correct axis labels
+
+Test case 3 - Custom figure size:
+- Custom size applied: True
+- Maintains readability
+
+=== plot_multilevel_info Tests (2024-03-19) ===
+
+Test case 1 - Basic plotting functionality:
+- Plot created: True
+- Proper visualization of levels
+
+Test case 2 - Plot elements:
+- Has title: True
+- Has x-label: True
+- Has y-label: True
+- Proper legend
+
+Test case 3 - Top N filtering:
+- Top N filtering applied: True
+- Shows correct number of orderings
+
+Test case 4 - Custom figure size:
+- Custom size applied: True
+- Maintains readability
+
+=== plot_feature_importance_by_level Tests (2024-03-19) ===
+
+Test case 1 - Basic plotting functionality:
+- Plot created: True
+- Shows feature importance across levels
+
+Test case 2 - Plot elements:
+- Has title: True
+- Has x-label: True
+- Has y-label: True
+- Proper legend for levels
+
+Test case 3 - Data aggregation:
+- Correct mean calculations
+- Proper grouping by feature and level
+
+Test case 4 - Custom figure size:
+- Custom size applied: True
+- Maintains readability of grouped bars
+
+Key differences from R version:
+- Uses seaborn instead of ggplot2
+- Returns matplotlib figure instead of R graphics object
+- Supports custom figure size parameter
+- Pre-computes decomposition for efficiency
+
+Assumptions and limitations:
+- Requires matplotlib/seaborn for visualization
+- Memory efficient with single pass decomposition
+- Maintains consistent feature ordering
+- Handles rotated labels for readability

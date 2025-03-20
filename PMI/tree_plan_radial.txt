@@ -1,0 +1,160 @@
+# Radial Tree-Structured Visualization for Conditional Mutual Information
+
+## Concept Overview
+This plan outlines the implementation of a radial tree-structured visualization for displaying conditional mutual information across multiple variables. The visualization uses a circular layout where each level expands outward in rings, representing conditioning on additional variables. The circular design efficiently uses space to handle the exponential growth in combinations.
+
+## Visual Structure
+
+1. **CENTER (ROOT LEVEL)**
+   - The visualization begins with the target variable Y at the center
+   - The first ring of bars radiates outward from this center point
+   - Each bar represents a bin of the first conditioning variable
+   - Bar length (radius) represents mutual information I(Y;A=a)
+   - Bar width represents proportion of samples in that bin
+   - Bars are arranged in a complete circle around the center
+
+2. **MIDDLE RINGS (BRANCH LEVELS)**
+   - Each subsequent variable forms a new concentric ring
+   - Each bar in the inner ring branches out to multiple bars in the next ring
+   - The outer ring bars represent bins of the next conditioning variable
+   - Bars are positioned radially, maintaining their angular position from the center
+   - Bar length represents conditional mutual information I(Y;B=b|A=a)
+   - Circular guide lines connect the tips of bars at each level
+   - Color coding distinguishes different variables
+
+3. **OUTER RINGS (DEEPER CONDITIONING)**
+   - Additional conditioning variables create new, larger concentric rings
+   - The angular width of segments decreases as we move outward to accommodate more combinations
+   - Branches maintain their radial alignment
+   - Pruning can eliminate branches with low information or sample size 
+
+4. **TERMINAL NODES**
+   - At the end of each branch path, small circular plots can display:
+     - Distribution of the target variable in this conditional subset
+     - Stacked bar representation of remaining variables
+     - Numerical values of conditional information
+
+## Implementation Components
+
+1. **DATA PROCESSING**
+   - Similar to horizontal layout, but with additional calculations for angular positioning
+   - Organization of data in a radial tree structure
+   - Calculation of appropriate angular spacing for each branch
+
+2. **RADIAL LAYOUT ALGORITHM**
+   - Calculate proper angular width for each branch based on sample proportion
+   - Determine radial distance based on information value
+   - Implement spacing rules to ensure readability
+   - Dynamic pruning threshold based on available space
+
+3. **VISUALIZATION RENDERING**
+   - Draw radial bars with curved edges
+   - Create concentric circular guidelines
+   - Connect branches with curved lines
+   - Implement heat-map style color gradients for easy value comparison
+
+4. **LABELING & ANNOTATIONS**
+   - Curved text labels following the ring structure
+   - Information values displayed at appropriate positions
+   - Clear path indicators showing the conditioning chain
+   - Legends for variables and color schemes
+
+5. **RING MANAGEMENT**
+   - Adjustable ring spacing
+   - Option for logarithmic scaling of ring distances
+   - Filtering mechanism to show only significant branches
+
+## Advantages of Radial Layout
+
+1. **SPACE EFFICIENCY**
+   - Circular design utilizes the entire 2D space rather than just horizontal/vertical dimensions
+   - Natural accommodation for exponential growth - outer rings have more circumference
+   - More combinations can be displayed in a single figure
+
+2. **INTUITIVE ORGANIZATION**
+   - Provides a clear visual hierarchy from center outward
+   - Distance from center represents "depth" of conditioning
+   - Angular position maintains consistent lineage tracking
+
+3. **COMPARATIVE ANALYSIS**
+   - Circular guidelines make it easy to compare information values across branches
+   - Shape patterns become recognizable (uniform circles vs. irregular shapes indicate patterns)
+   - Global structure is more immediately apparent
+
+4. **SCALABILITY**
+   - Can represent more variables before becoming unreadable
+   - Better handles the exponential growth of combinations
+   - Natural breakpoints for pagination if needed (circular sectors)
+
+## Technical Challenges
+
+1. **ANGULAR RESOLUTION**
+   - At deep levels, angular space becomes limited
+   - Need to determine minimum readable angular width
+   - Implement zoom mechanisms for dense areas
+
+2. **LABELING COMPLEXITY**
+   - Curved text is harder to implement and read
+   - Space constraints for labels in outer rings
+   - Need careful positioning to avoid overlap
+
+3. **RENDERING COMPLEXITY**
+   - Curved shapes are more computationally intensive to draw
+   - Need for high-resolution rendering
+   - More complex coordinate transformations
+
+4. **PERCEPTION CONSIDERATIONS**
+   - Ensuring radial distances are perceptually comparable
+   - Addressing potential distortion in visual perception of radial vs. linear measures
+   - Maintaining readability at all angles
+
+## Implementation Phases
+
+1. **PROTOTYPE PHASE**
+   - Simple two-ring implementation (1-2 conditioning variables)
+   - Basic radial layout algorithm
+   - Fixed angular spacing
+   - Limited labeling
+
+2. **BASIC IMPLEMENTATION**
+   - Support for 3-4 rings
+   - Dynamic angular spacing based on sample proportions
+   - Improved radial layout algorithm
+   - Better labeling system
+
+3. **ADVANCED FEATURES**
+   - Smart pruning algorithms
+   - Zoom functionality for dense regions
+   - Enhanced visual design
+   - Comprehensive labeling system
+
+4. **OPTIMIZATION**
+   - High-performance rendering for large trees
+   - Publication-quality output
+   - Multiple output formats
+   - Documentation and examples
+
+## Specific Implementation Notes
+
+1. **MATPLOTLIB IMPLEMENTATION**
+   - Use polar projection for native radial plotting
+   - PolarAxes for circular layout
+   - Custom patch objects for bars
+   - Path objects for connecting branches
+
+2. **NETWORKX + MATPLOTLIB**
+   - Use NetworkX for tree structure
+   - Custom radial layout algorithm
+   - Matplotlib for rendering
+
+3. **SPECIALIZED LIBRARIES**
+   - Investigate circular dendrogram options in ETE Toolkit or DendroPy
+   - Adapt phylogenetic radial layouts from Toytree
+   - Consider GraphViz "circo" layout algorithm
+
+## Testing and Evaluation Plan
+
+1. Compare visual clarity between horizontal and radial layouts with the same data
+2. Test with increasing numbers of variables to find practical limits
+3. Evaluate readability through user feedback
+4. Test print and digital readability at various scales 
